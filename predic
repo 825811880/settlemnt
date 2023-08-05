@@ -1,0 +1,118 @@
+clear
+Prior1= [0,1;0,0.1]; %
+Prior2= [0,1;0,0.1];
+Prior3= [0,0.1;0,0.01];
+filename = 'settlement.xlsx';
+sheet = 1;
+xlRange = 'AH51:AI69';
+ylRange = 'AM51:AM69';
+klRange = 'K56:K56';
+llRange = 'M56:M56';
+subsetA = xlsread(filename,sheet,xlRange);
+c = xlsread(filename,sheet,klRange);
+d = xlsread(filename,sheet,llRange);
+XM = xlsread(filename,sheet,ylRange);
+Model_error_mean=0;Model_error_std =0.1; a=subsetA(:,1);b=subsetA(:,2);%
+XTM=XM; N_XM=length(XTM);%
+Upper_Bound_Mu1=Prior1(1,2); Lower_Bound_Mu1=Prior1(1,1); Interval_Mu1=0.05;%
+Upper_Bound_Sg1=Prior1(2,2); Lower_Bound_Sg1=Prior1(2,1); Interval_Sg1=0.02;%
+Upper_Bound_Mu2=Prior2(1,2); Lower_Bound_Mu2=Prior2(1,1); Interval_Mu2=0.05;%
+Upper_Bound_Sg2=Prior2(2,2); Lower_Bound_Sg2=Prior2(2,1); Interval_Sg2=0.02;%
+Upper_Bound_Mu3=Prior3(1,2); Lower_Bound_Mu3=Prior3(1,1); Interval_Mu3=0.01;%
+Upper_Bound_Sg3=Prior3(2,2); Lower_Bound_Sg3=Prior3(2,1); Interval_Sg3=0.002;%
+Mu_Array1=...
+(Lower_Bound_Mu1+Interval_Mu1/2:Interval_Mu1:Upper_Bound_Mu1-Interval_Mu1/2)';
+Sg_Array1=...
+(Lower_Bound_Sg1+Interval_Sg1/2:Interval_Sg1:Upper_Bound_Sg1-Interval_Sg1/2)';%
+Mu_Array2=...
+(Lower_Bound_Mu2+Interval_Mu2/2:Interval_Mu2:Upper_Bound_Mu2-Interval_Mu2/2)';
+Sg_Array2=...
+(Lower_Bound_Sg2+Interval_Sg2/2:Interval_Sg2:Upper_Bound_Sg2-Interval_Sg2/2)';%
+Mu_Array3=...
+(Lower_Bound_Mu3+Interval_Mu3/2:Interval_Mu3:Upper_Bound_Mu3-Interval_Mu3/2)';
+Sg_Array3=...
+(Lower_Bound_Sg3+Interval_Sg3/2:Interval_Sg3:Upper_Bound_Sg3-Interval_Sg3/2)';%
+N_intervals_Mu1=length(Mu_Array1); N_intervals_Sg1=length(Sg_Array1);%
+N_intervals_Mu2=length(Mu_Array2); N_intervals_Sg2=length(Sg_Array2);%
+N_intervals_Mu3=length(Mu_Array3); N_intervals_Sg3=length(Sg_Array3);%
+Sg1=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);
+Mu1=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);%
+Sg2=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);
+Mu2=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);%
+Sg3=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);
+Mu3=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);%
+Likelihood_Mu1=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);
+Likelihood_Sg1=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);%
+Inside_Function=zeros(N_intervals_Mu1,N_intervals_Sg1,N_intervals_Mu2,N_intervals_Sg2,N_intervals_Mu3,N_intervals_Sg3);%
+for i=1: N_intervals_Mu1
+for j=1: N_intervals_Sg1 
+for k=1: N_intervals_Mu2
+for l=1: N_intervals_Sg2 
+for n=1: N_intervals_Mu3 
+for m=1: N_intervals_Sg3 
+Prior_PDF_Numerical=1/((Prior1(1,2)-Prior1(1,1))*(Prior1(2,2)-Prior1(2,1))*(Prior2(1,2)-Prior2(1,1))*(Prior2(2,2)-Prior2(2,1))*(Prior3(1,2)-Prior3(1,1))*(Prior3(2,2)-Prior3(2,1))); 
+Mu1(i,j,k,l,n,m)=Mu_Array1(i);%
+Sg1(i,j,k,l,n,m)=Sg_Array1(j);%
+Mu2(i,j,k,l,n,m)=Mu_Array2(k);
+Sg2(i,j,k,l,n,m)=Sg_Array2(l);%β
+Mu3(i,j,k,l,n,m)=Mu_Array3(n);
+Sg3(i,j,k,l,n,m)=Sg_Array3(m);%
+Likelihood_Mu1(i,j,k,l,n,m)=a(1)*c*Mu1(i,j,k,l,n,m)+a(1)*d*Mu2(i,j,k,l,n,m)+0.8*a(1)^0.3*b(1)*Mu3(i,j,k,l,n,m);%ln（y-US）
+Likelihood_Sg1(i,j,k,l,n,m)=((a(1)*c*Sg1(i,j,k,l,n,m))^2+(a(1)*d*Sg2(i,j,k,l,n,m))^2+(0.8*a(1)^0.3*b(1)*Sg3(i,j,k,l,n,m))^2+(Model_error_std)^2)^0.5;%
+Inside_Function(i,j,k,l,n,m)=normpdf(XTM(1),Likelihood_Mu1(i,j,k,l,n,m),...%
+Likelihood_Sg1(i,j,k,l,n,m))*Prior_PDF_Numerical; 
+end
+end
+end
+end
+end
+end
+%% Generating Eu samples from Equation (11) using MCMCS 
+N_MCMC_XD=30000; MCMC_XD_Original1=zeros(N_MCMC_XD,3);
+MCMC_XD1=zeros(N_MCMC_XD,3);r_XD=zeros(N_MCMC_XD,1);  
+Prior_mu_Mean1=(Prior1(1,1)+Prior1(1,2))/2;
+Prior_sg_Mean1=(Prior1(2,1)+Prior1(2,2))/2;%
+Prior_mu_Mean2=(Prior2(1,1)+Prior2(1,2))/2;
+Prior_sg_Mean2=(Prior2(2,1)+Prior2(2,2))/2;%
+Prior_mu_Mean3=(Prior3(1,1)+Prior3(1,2))/2;
+Prior_sg_Mean3=(Prior3(2,1)+Prior3(2,2))/2;%
+Proposal_Cov_XD1=Prior_sg_Mean1/Prior_mu_Mean1;
+Proposal_Cov_XD2=Prior_sg_Mean2/Prior_mu_Mean2;
+Proposal_Cov_XD3=Prior_sg_Mean3/Prior_mu_Mean3;%
+XD0(1)=Prior_mu_Mean1;%
+XD0(2)=Prior_mu_Mean2;
+XD0(3)=Prior_mu_Mean3;
+Target_PDF0=sum(sum(sum(sum(sum(sum((normpdf(XD0(1),Mu1,Sg1).*normpdf(XD0(2),Mu2,Sg2).*normpdf(XD0(3),Mu3,Sg3).*Inside_Function)...%
+*Interval_Mu1*Interval_Sg1*Interval_Mu2*Interval_Sg2*Interval_Mu3*Interval_Sg3))))));
+
+MCMC_XD_Original1(1,:)=XD0; MCMC_XD1(1,:)=XD0;
+
+for i=2:N_MCMC_XD%
+XD1(1)=random('norm',XD0(1),XD0(1)*Proposal_Cov_XD1);%
+XD1(2)=random('norm',XD0(2),XD0(2)*Proposal_Cov_XD2);
+XD1(3)=random('norm',XD0(3),XD0(3)*Proposal_Cov_XD3);
+if XD1>0
+Target_PDF1=sum(sum(sum(sum(sum(sum((normpdf(XD1(1),Mu1,Sg1).*normpdf(XD1(2),Mu2,Sg2).*normpdf(XD1(3),Mu3,Sg3).*Inside_Function)...%eu=
+*Interval_Mu1*Interval_Sg1*Interval_Mu2*Interval_Sg2*Interval_Mu3*Interval_Sg3))))));
+Proposal_PDF_XD0_XD11=normpdf(XD0(1),XD1(1),XD1(1)*Proposal_Cov_XD1);
+Proposal_PDF_XD0_XD12=normpdf(XD0(2),XD1(2),XD1(2)*Proposal_Cov_XD2);
+Proposal_PDF_XD0_XD13=normpdf(XD0(3),XD1(3),XD1(3)*Proposal_Cov_XD3);
+Proposal_PDF_XD1_XD01=normpdf(XD1(1),XD0(1),XD0(1)*Proposal_Cov_XD1); 
+Proposal_PDF_XD1_XD02=normpdf(XD1(2),XD0(2),XD0(2)*Proposal_Cov_XD2); 
+Proposal_PDF_XD1_XD03=normpdf(XD1(3),XD0(3),XD0(3)*Proposal_Cov_XD3);
+r_XD(i,:)=...
+Target_PDF1*Proposal_PDF_XD0_XD11*Proposal_PDF_XD0_XD12*Proposal_PDF_XD0_XD13/(Target_PDF0*Proposal_PDF_XD1_XD01*Proposal_PDF_XD1_XD02*Proposal_PDF_XD1_XD03);
+if r_XD(i,:)>rand()
+XD0=XD1;Target_PDF0=Target_PDF1;
+else
+ XD0=XD0;Target_PDF0=Target_PDF0;
+end
+MCMC_XD_Original1(i,:)=XD1;MCMC_XD1(i,:)=XD0; 
+else
+XD0=XD0;Target_PDF0=Target_PDF0;
+MCMC_XD_Original1(i,:)=XD1;MCMC_XD1(i,:)=XD0;
+end
+end
+jj=mean(MCMC_XD1)
+kk=std(MCMC_XD1)
+save A1.mat
